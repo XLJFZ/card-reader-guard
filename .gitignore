@@ -8,3 +8,9 @@ device.xml.bak
 *.exe
 *.zip
 dist/
+
+# Local appearance preference
+appearance.txt
+
+# Local UI review captures and preview tools
+review/
