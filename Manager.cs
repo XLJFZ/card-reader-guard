@@ -8,7 +8,7 @@ using Microsoft.Win32;
 
 static partial class ReaderGuard {
  static readonly Color Ink=Color.FromArgb(26,39,61),Muted=Color.FromArgb(101,116,139),Blue=Color.FromArgb(38,96,220);
- static void StyleButton(Button b,bool primary) { b.FlatStyle=FlatStyle.Flat; b.FlatAppearance.BorderSize=primary?0:1; b.FlatAppearance.BorderColor=Color.FromArgb(214,222,232); b.BackColor=primary?Blue:Color.White; b.ForeColor=primary?Color.White:Ink; b.Cursor=Cursors.Hand; }
+ static void StyleButton(Button b,bool primary) { b.FlatStyle=FlatStyle.Flat; b.FlatAppearance.BorderSize=primary?0:1; b.FlatAppearance.BorderColor=Color.FromArgb(214,222,232); Action colors=()=>{b.BackColor=!b.Enabled?Color.FromArgb(228,233,241):primary?Blue:Color.White;b.ForeColor=!b.Enabled?Muted:primary?Color.White:Ink;};b.EnabledChanged+=(s,e)=>colors();colors();b.Cursor=Cursors.Hand; }
  static void StyleGrid(DataGridView g) {
   g.BackgroundColor=Color.White; g.BorderStyle=BorderStyle.None; g.CellBorderStyle=DataGridViewCellBorderStyle.SingleHorizontal; g.GridColor=Color.FromArgb(233,237,243); g.EnableHeadersVisualStyles=false;
   g.ColumnHeadersDefaultCellStyle.BackColor=Color.FromArgb(242,245,250); g.ColumnHeadersDefaultCellStyle.ForeColor=Muted; g.ColumnHeadersDefaultCellStyle.Font=new Font("Microsoft YaHei UI",9);

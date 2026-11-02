@@ -44,14 +44,14 @@ static partial class ReaderGuard {
    grid.Columns.Add("model","设备型号"); grid.Columns.Add("size","容量"); grid.Columns.Add("letters","盘符"); grid.Columns.Add("index","磁盘编号");
    grid.Columns[0].FillWeight=55; grid.Columns[1].FillWeight=18; grid.Columns[2].FillWeight=12; grid.Columns[3].FillWeight=15;
    var detail=new TextBox { Left=18,Top=308,Width=840,Height=65,Multiline=true,ReadOnly=true,ScrollBars=ScrollBars.Vertical,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
-   var confirm=new CheckBox { Left=18,Top=383,Width=840,Height=30,Text="我确认选中的设备是要自动弹出的读卡器；空闲 5 分钟后停止整只读卡器。",Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
+   var confirm=new CheckBox { Left=18,Top=383,Width=840,Height=30,Text="我确认这是要自动弹出的读卡器；按管理页设置的空闲时间停止整只设备。",Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
    var hint=new Label { Left=18,Top=422,Width=830,Height=28,Text="每次新增都需确认；确认后返回管理页，可命名并设置独立空闲时间。",ForeColor=Color.DimGray };
    var refresh=new Button { Left=18,Top=466,Width=120,Height=34,Text="刷新设备" };
    var bind=new Button { Left=610,Top=466,Width=150,Height=34,Text="确认此读卡器",Enabled=false,Anchor=AnchorStyles.Bottom|AnchorStyles.Right };
    var cancel=new Button { Left=774,Top=466,Width=84,Height=34,Text="取消",DialogResult=DialogResult.Cancel,Anchor=AnchorStyles.Bottom|AnchorStyles.Right };
    Action update=()=>{ var row=grid.SelectedRows.Count==1?grid.SelectedRows[0]:null; var c=row==null?null:row.Tag as Candidate; detail.Text=c==null?"未选中设备。":("USB 标识："+c.Usb+Environment.NewLine+"设备报告的磁盘序列号："+c.Serial); confirm.Checked=false; bind.Enabled=false; };
    grid.SelectionChanged+=(s,e)=>update(); confirm.CheckedChanged+=(s,e)=>{bind.Enabled=confirm.Checked && grid.SelectedRows.Count==1;};
-   Action load=()=>{ try { grid.Rows.Clear(); foreach(var c in Candidates()) { int i=grid.Rows.Add(c.Model,(c.Size/1000000000.0).ToString("F1")+" GB",c.Letters,c.Index); grid.Rows[i].Tag=c; } grid.ClearSelection(); update(); if(grid.Rows.Count==0) detail.Text="未找到可绑定设备。请插入读卡器和卡后刷新。本版本仅支持具有单一直接磁盘子设备、可读取序列号的 USB 存储设备。"; } catch(Exception e) { detail.Text="读取设备失败："+e.Message; } };
+   Action load=()=>{ try { grid.Rows.Clear(); foreach(var c in Candidates()) { int i=grid.Rows.Add(c.Model,(c.Size/1000000000.0).ToString("F1")+" GB",c.Letters,c.Index); grid.Rows[i].Tag=c; } grid.ClearSelection(); update(); if(grid.Rows.Count==0) detail.Text="未发现可添加的读卡器。请先插入读卡器和存储卡，再点击“刷新设备”。若仍未显示，这只设备可能暂不受支持。"; } catch(Exception e) { detail.Text="读取设备失败："+e.Message; } };
    refresh.Click+=(s,e)=>load();
    bind.Click+=(s,e)=>{
     try {
