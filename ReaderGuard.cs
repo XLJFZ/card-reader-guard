@@ -81,7 +81,7 @@ static partial class ReaderGuard {
    if(args.Contains("--probe")) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
    if(!File.Exists(Path.Combine(Root,"device.xml"))) return 2;
    if(File.Exists(Path.Combine(Root,"stop.flag"))) File.Delete(Path.Combine(Root,"stop.flag"));
-   Log("START v0.2.2 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
+   Log("START v0.2.3 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
    var states=new Dictionary<string,IdleState>(StringComparer.OrdinalIgnoreCase); var clock=Stopwatch.StartNew();
    while(!File.Exists(Path.Combine(Root,"stop.flag"))) {
     var request=Path.Combine(Root,"manage.flag");

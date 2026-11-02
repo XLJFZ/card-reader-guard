@@ -11,5 +11,5 @@ try {
     Copy-Item -LiteralPath 'Assets\App.ico' -Destination 'dist\CardReaderGuard.ico' -Force
     Copy-Item -LiteralPath 'README.md','LICENSE' -Destination dist -Force
     Copy-Item -LiteralPath 'CardReaderGuard.exe.config' -Destination dist -Force
-    Compress-Archive -LiteralPath (Get-ChildItem dist -File | Where-Object { $_.Name -notmatch '^(device\.|status\.log|stop\.flag|manage\.flag|appearance\.txt$)' }).FullName -DestinationPath CardReaderGuard-v0.2.2-win-x64.zip -Force
+    Compress-Archive -LiteralPath (Get-ChildItem dist -File | Where-Object { $_.Name -notmatch '^(device\.|status\.log|stop\.flag|manage\.flag|appearance\.txt$)' }).FullName -DestinationPath CardReaderGuard-v0.2.3-win-x64.zip -Force
 } finally { Pop-Location }
