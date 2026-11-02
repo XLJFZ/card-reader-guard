@@ -14,6 +14,9 @@ static partial class ReaderGuard {
  static string Target, Model, Serial;
  static readonly string Root = AppDomain.CurrentDomain.BaseDirectory;
  static readonly string LogPath = Path.Combine(Root,"status.log");
+ [DllImport("user32.dll")] static extern IntPtr GetWindowDpiAwarenessContext(IntPtr hwnd);
+ [DllImport("user32.dll")] static extern int GetAwarenessFromDpiAwarenessContext(IntPtr context);
+ [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr hwnd);
  [DllImport("cfgmgr32.dll", CharSet=CharSet.Unicode)] static extern uint CM_Locate_DevNodeW(out uint n,string id,uint flags);
  [DllImport("cfgmgr32.dll")] static extern uint CM_Get_Parent(out uint p,uint n,uint flags);
  [DllImport("cfgmgr32.dll")] static extern uint CM_Get_Child(out uint p,uint n,uint flags);
@@ -62,11 +65,13 @@ static partial class ReaderGuard {
   using(var tray=new NotifyIcon()) { tray.Icon=SystemIcons.Information; tray.Visible=true; tray.BalloonTipTitle=title; tray.BalloonTipText=message; tray.ShowBalloonTip(5000); var until=DateTime.UtcNow.AddSeconds(7); while(DateTime.UtcNow<until) { Application.DoEvents(); Thread.Sleep(100); } tray.Visible=false; }
  }
  [STAThread] static int Main(string[] args) {
+  Application.EnableVisualStyles();
+  Application.SetCompatibleTextRenderingDefault(false);
+  if(args.Contains("--dpi-check")) { using(var form=new Form()) { var handle=form.Handle; var awareness=GetAwarenessFromDpiAwarenessContext(GetWindowDpiAwarenessContext(handle)); Log("DPI CHECK awareness="+awareness+" windowDpi="+GetDpiForWindow(handle)+" target="+AppDomain.CurrentDomain.SetupInformation.TargetFrameworkName); return awareness==2?0:2; } }
   if(args.Contains("--stop")) { File.WriteAllText(Path.Combine(Root,"stop.flag"),""); return 0; }
   bool created; using(var mutex=new Mutex(true,@"Local\CardReaderGuard_152D0583",out created)) {
    if(!created) { if(!args.Contains("--background") && !args.Contains("--probe")) File.WriteAllText(Path.Combine(Root,"manage.flag"),""); return args.Contains("--probe")?3:0; }
    bool interactive=!args.Contains("--background") && !args.Contains("--probe");
-   Application.EnableVisualStyles();
    List<Binding> bindings;
    try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); }
    catch(Exception error) { Log("CONFIG ERROR: "+error.Message); if(interactive) MessageBox.Show("绑定配置无法读取。原文件已保留，请检查 device.xml 或从备份恢复。\n"+error.Message,"无法读取配置"); return 2; }
@@ -76,7 +81,7 @@ static partial class ReaderGuard {
    if(args.Contains("--probe")) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
    if(!File.Exists(Path.Combine(Root,"device.xml"))) return 2;
    if(File.Exists(Path.Combine(Root,"stop.flag"))) File.Delete(Path.Combine(Root,"stop.flag"));
-   Log("START v0.2.0 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
+   Log("START v0.2.1 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
    var states=new Dictionary<string,IdleState>(StringComparer.OrdinalIgnoreCase); var clock=Stopwatch.StartNew();
    while(!File.Exists(Path.Combine(Root,"stop.flag"))) {
     var request=Path.Combine(Root,"manage.flag");

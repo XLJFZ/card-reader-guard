@@ -12,6 +12,7 @@ static partial class ReaderGuard {
  static void StyleGrid(DataGridView g) {
   g.BackgroundColor=Color.White; g.BorderStyle=BorderStyle.None; g.CellBorderStyle=DataGridViewCellBorderStyle.SingleHorizontal; g.GridColor=Color.FromArgb(233,237,243); g.EnableHeadersVisualStyles=false;
   g.ColumnHeadersDefaultCellStyle.BackColor=Color.FromArgb(242,245,250); g.ColumnHeadersDefaultCellStyle.ForeColor=Muted; g.ColumnHeadersDefaultCellStyle.Font=new Font("Microsoft YaHei UI",9);
+  g.ColumnHeadersDefaultCellStyle.SelectionBackColor=Color.FromArgb(242,245,250); g.ColumnHeadersDefaultCellStyle.SelectionForeColor=Ink;
   g.ColumnHeadersHeight=40; g.ColumnHeadersHeightSizeMode=DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
   g.DefaultCellStyle.BackColor=Color.White; g.DefaultCellStyle.ForeColor=Ink; g.DefaultCellStyle.SelectionBackColor=Color.FromArgb(229,238,255); g.DefaultCellStyle.SelectionForeColor=Ink; g.DefaultCellStyle.Padding=new Padding(8,4,8,4); g.RowTemplate.Height=52;
   g.AllowUserToResizeRows=false; g.RowHeadersVisible=false; g.AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill;
@@ -19,7 +20,7 @@ static partial class ReaderGuard {
  static bool Manage(ref List<Binding> bindings) {
   var draft=bindings.Select(b=>b.Copy()).ToList(); bool accepted=false;
   using(var form=new Form()) {
-   form.Text="读卡器管理 · Card Reader Guard"; form.Font=new Font("Microsoft YaHei UI",10); form.AutoScaleMode=AutoScaleMode.Dpi; form.ClientSize=new Size(1000,650); form.FormBorderStyle=FormBorderStyle.FixedSingle; form.MaximizeBox=false; form.StartPosition=FormStartPosition.CenterScreen; form.BackColor=Color.FromArgb(243,246,250);
+   form.SuspendLayout(); form.Text="读卡器管理 · Card Reader Guard"; form.Font=new Font("Microsoft YaHei UI",10); form.AutoScaleDimensions=new SizeF(96,96); form.AutoScaleMode=AutoScaleMode.Dpi; form.ClientSize=new Size(1000,650); form.FormBorderStyle=FormBorderStyle.FixedSingle; form.MaximizeBox=false; form.StartPosition=FormStartPosition.CenterScreen; form.BackColor=Color.FromArgb(243,246,250);
    var header=new Panel { Left=0,Top=0,Width=1000,Height=110,BackColor=Ink,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
    header.Controls.Add(new Label { Left=26,Top=19,Width=600,Height=40,Text="读卡器管理",ForeColor=Color.White,Font=new Font("Microsoft YaHei UI",22,FontStyle.Bold) });
    header.Controls.Add(new Label { Left=29,Top=69,Width=900,Height=25,Text="只监测你确认过的设备。设置完成后，安静地在后台运行。",ForeColor=Color.FromArgb(192,207,230) });
@@ -66,7 +67,7 @@ static partial class ReaderGuard {
    remove.Click+=(s,e)=>{var b=selected(); if(b!=null && MessageBox.Show("删除“"+b.Name+"”的绑定？\n保存后将不再自动弹出这只设备，不会删除卡内文件。","删除绑定",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)==DialogResult.Yes){draft.Remove(b);render(null);}};
    refresh.Click+=(s,e)=>rescan();
    save.Click+=(s,e)=>{try { SaveBindings(draft,Path.Combine(Root,"device.xml")); using(var key=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) {if(startup.Checked)key.SetValue("CardReaderGuard","\""+Application.ExecutablePath+"\" --background");else key.DeleteValue("CardReaderGuard",false);} accepted=true;form.DialogResult=DialogResult.OK;form.Close(); } catch(Exception error){MessageBox.Show(error.Message,"未能保存",MessageBoxButtons.OK,MessageBoxIcon.Warning);} };
-   form.Controls.AddRange(new Control[]{header,section,summary,add,refresh,grid,side,detail,startup,foot,cancel,save}); form.CancelButton=cancel; form.Shown+=(s,e)=>rescan(); form.ShowDialog();
+   form.Controls.AddRange(new Control[]{header,section,summary,add,refresh,grid,side,detail,startup,foot,cancel,save}); form.CancelButton=cancel; form.Shown+=(s,e)=>rescan(); form.ResumeLayout(true); form.ShowDialog();
   }
   if(accepted) bindings=draft; return accepted;
  }

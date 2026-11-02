@@ -1,12 +1,14 @@
 # Card Reader Guard · 读卡器自动弹出
 
+[项目官网](https://xljfz.github.io/card-reader-guard/) · [下载最新版](https://github.com/XLJFZ/card-reader-guard/releases/latest)
+
 Windows 小工具：由用户选择并确认读卡器，以后仅监测绑定设备。每只读卡器可独立命名、启用或暂停，并设置 1 至 120 分钟的空闲时间，默认 5 分钟。空闲达到设定时间后，通过 Windows 安全弹出接口请求停止整只读卡器。
 
 平时没有窗口或常驻托盘图标；弹出成功时短暂显示系统通知。没有联网、遥测或自动更新功能。
 
 ## 使用
 
-1. 下载 Releases 中的 `CardReaderGuard-v0.2.0-win-x64.zip`，解压到长期保留且可写的本地文件夹。不要放在要弹出的卡里。
+1. 下载 Releases 中的 `CardReaderGuard-v0.2.1-win-x64.zip`，完整解压到长期保留且可写的本地文件夹。不要放在要弹出的卡里。
 2. 插入读卡器和存储卡，双击 `CardReaderGuard.exe` 或 `启动.vbs`。
 3. 在管理页点击“添加读卡器”，核对候选设备的型号、容量和盘符。列表也可能包含移动硬盘，软件无法可靠地自动区分所有读卡器和硬盘盒。
 4. 勾选确认选项，点击“确认此读卡器”，再在最终确认中选择“是”。返回管理页后，可修改名称、空闲时间和启用状态，也能继续添加其他读卡器。
@@ -21,6 +23,8 @@ Windows 小工具：由用户选择并确认读卡器，以后仅监测绑定设
 双击 `停止.vbs` 停止后台监测，通常约 5 秒生效；若正在管理，请先关闭管理窗口。双击 `启动.vbs` 打开管理页并恢复。运行 `移除开机启动.ps1` 可停止程序并移除本工具的登录启动项。
 
 从 v0.1.0 升级时先停止旧版，再用新版文件替换原文件夹中的程序与脚本，保留 `device.xml`。新版能读取旧版单设备配置，首次保存后转换为多设备格式，并保留 `device.xml.bak` 备份。需要回退旧版时，用备份恢复旧格式。
+
+v0.2.1 启用逐显示器高 DPI 渲染，修复高缩放比例下整窗放大导致的字体模糊。`CardReaderGuard.exe.config` 必须与 EXE 保持在同一文件夹；请完整解压升级，不要只复制 EXE。绑定和空闲时间设置无需重做。
 
 ## 绑定范围
 
@@ -43,7 +47,7 @@ Windows 小工具：由用户选择并确认读卡器，以后仅监测绑定设
 
 ## 系统与限制
 
-面向 Windows 10/11 x64，使用 .NET Framework 4.x 和 Windows WMI。当前实机测试环境为一台 Windows 电脑、一只 USB/UASP 读卡器；没有覆盖所有型号。只有单一直接磁盘子设备且能读取序列号的 USB 存储节点可绑定，部分多槽、复合设备或其他驱动拓扑不支持。
+面向 Windows 10/11 x64，使用 .NET Framework 4.8 或更高的 4.x 运行时和 Windows WMI。当前实机测试环境为一台 Windows 电脑、一只 USB/UASP 读卡器；没有覆盖所有型号。只有单一直接磁盘子设备且能读取序列号的 USB 存储节点可绑定，部分多槽、复合设备或其他驱动拓扑不支持。
 
 程序以当前用户权限运行，不会主动要求管理员权限。如果系统策略禁止 WMI 或安全移除，程序会跳过并记录原因。Windows 通知关闭或免打扰可能使成功提示不可见。
 
@@ -70,9 +74,12 @@ Windows PowerShell 中运行：
 
 另有不调用弹出接口的检查，覆盖读写、重连、缺少基线、排队请求、监测间隔、未绑定设备及型号/序列号不符等情况。v0.2.0 另有旧版配置迁移、多设备保存、独立时间、暂停、删除、重复身份拒绝、错误时间拒绝及计时状态隔离检查。降温效果、多只读卡器同时接入和其他硬件兼容性尚未验证。
 
+v0.2.1 在本机 150% 缩放下验证了逐显示器 DPI 感知，窗口报告 144 DPI，用户确认字体已清晰。构建检查增加实际运行下载包程序并核对 DPI 感知模式；其他缩放比例和跨屏拖动尚未逐一实测。
+
 ## 参考
 
 - [Microsoft：CM_Request_Device_EjectW](https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/nf-cfgmgr32-cm_request_device_ejectw)
+- [Microsoft：Windows Forms 高 DPI 配置](https://learn.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8)
 - [USB Disk Ejector](https://github.com/bgbennyboy/USB-Disk-Ejector)
 - [USB Safely Remove 电源与读卡器选项](https://safelyremove.com/help/ui_programOptionsWindow.htm)
 

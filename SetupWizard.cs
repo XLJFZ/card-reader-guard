@@ -38,7 +38,7 @@ static partial class ReaderGuard {
  static Binding PickDevice() {
   Binding picked=null;
   using(var form=new Form()) {
-   form.Text="选择要自动弹出的读卡器"; form.ClientSize=new Size(880,520); form.StartPosition=FormStartPosition.CenterScreen; form.MinimumSize=new Size(820,540); form.Font=new Font("Microsoft YaHei UI",10); form.AutoScaleMode=AutoScaleMode.Dpi;
+   form.SuspendLayout(); form.Text="选择要自动弹出的读卡器"; form.ClientSize=new Size(880,520); form.StartPosition=FormStartPosition.CenterScreen; form.MinimumSize=new Size(820,540); form.Font=new Font("Microsoft YaHei UI",10); form.AutoScaleDimensions=new SizeF(96,96); form.AutoScaleMode=AutoScaleMode.Dpi;
    var intro=new Label { Left=18,Top=16,Width=840,Height=65,Text="请插入读卡器和存储卡，选中对应设备。列表也可能包含移动硬盘，请核对后再确认。\n不确定时：拔掉读卡器并刷新，再插回并刷新，找出新增设备。",Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
    var grid=new DataGridView { Left=18,Top=88,Width=840,Height=210,ReadOnly=true,AllowUserToAddRows=false,AllowUserToDeleteRows=false,RowHeadersVisible=false,SelectionMode=DataGridViewSelectionMode.FullRowSelect,MultiSelect=false,AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill,Anchor=AnchorStyles.Top|AnchorStyles.Left|AnchorStyles.Right };
    grid.Columns.Add("model","设备型号"); grid.Columns.Add("size","容量"); grid.Columns.Add("letters","盘符"); grid.Columns.Add("index","磁盘编号");
@@ -67,7 +67,7 @@ static partial class ReaderGuard {
    };
    form.BackColor=Color.FromArgb(245,247,251); StyleGrid(grid); StyleButton(bind,true); StyleButton(refresh,false); StyleButton(cancel,false);
    form.Controls.AddRange(new Control[]{intro,grid,detail,confirm,hint,refresh,bind,cancel}); form.CancelButton=cancel; form.Shown+=(s,e)=>load();
-   return form.ShowDialog()==DialogResult.OK?picked:null;
+   form.ResumeLayout(true); return form.ShowDialog()==DialogResult.OK?picked:null;
   }
  }
 }
