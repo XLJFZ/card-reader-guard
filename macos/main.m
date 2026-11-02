@@ -364,7 +364,7 @@ static NSButton *Button(NSString *title, NSRect frame, id target, SEL action) {
 - (void)refresh:(id)sender {
     (void)sender; self.connected = Devices(self.session); [self.table reloadData];
     if (self.draft.count && self.table.selectedRow < 0) [self.table selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
-    [self tableViewSelectionDidChange:nil];
+    [self tableViewSelectionDidChange:[NSNotification notificationWithName:NSTableViewSelectionDidChangeNotification object:self.table]];
 }
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView { (void)tableView; return (NSInteger)self.draft.count; }
 - (NSView *)tableView:(NSTableView *)tableView viewForTableColumn:(NSTableColumn *)column row:(NSInteger)row {
