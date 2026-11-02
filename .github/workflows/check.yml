@@ -32,6 +32,21 @@ jobs:
       - name: Check idle and binding logic without ejecting hardware
         shell: pwsh
         run: ./test.ps1
+      - name: Write release checksums
+        shell: pwsh
+        run: |
+          $assembly = [regex]::Match((Get-Content -LiteralPath '.\AssemblyInfo.cs' -Raw), 'AssemblyFileVersion\("([\d.]+)"\)').Groups[1].Value
+          $short = ($assembly -split '\.')[0..2] -join '.'
+          $standalone = "CardReaderGuard-standalone-$short.exe"
+          Copy-Item -LiteralPath 'dist\CardReaderGuard.exe' -Destination $standalone -Force
+          $files = @()
+          $files += Get-ChildItem -Path . -Filter 'CardReaderGuard-v*-win-x64.zip' -File
+          $files += Get-Item -LiteralPath $standalone
+          $files += Get-ChildItem -Path 'installer\output\*.exe' -File
+          if (@($files).Count -lt 3) { throw "Expected the portable zip, the standalone executable and the installer; found $(@($files).Count)." }
+          $lines = $files | Sort-Object Name | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name }
+          [IO.File]::WriteAllLines((Join-Path $PWD 'SHA256SUMS.txt'), $lines, (New-Object System.Text.UTF8Encoding($false)))
+          Get-Content -LiteralPath 'SHA256SUMS.txt'
       - name: Upload portable package
         uses: actions/upload-artifact@v4
         with:
@@ -39,19 +54,9 @@ jobs:
           path: |
             CardReaderGuard-v*-win-x64.zip
             dist/CardReaderGuard.exe
+            CardReaderGuard-standalone-*.exe
           if-no-files-found: error
           retention-days: 14
-      - name: Write release checksums
-        shell: pwsh
-        run: |
-          $files = @()
-          $files += Get-ChildItem -Path . -Filter 'CardReaderGuard-v*-win-x64.zip' -File
-          $files += Get-ChildItem -Path 'dist\CardReaderGuard.exe' -File
-          $files += Get-ChildItem -Path 'installer\output\*.exe' -File
-          if (@($files).Count -lt 3) { throw "Expected the portable zip, the bare executable and the installer; found $(@($files).Count)." }
-          $lines = $files | Sort-Object Name | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name }
-          [IO.File]::WriteAllLines((Join-Path $PWD 'SHA256SUMS.txt'), $lines, (New-Object System.Text.UTF8Encoding($false)))
-          Get-Content -LiteralPath 'SHA256SUMS.txt'
       - name: Upload release checksums
         uses: actions/upload-artifact@v4
         with:
