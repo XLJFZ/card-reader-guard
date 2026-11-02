@@ -3,6 +3,8 @@ device.xml.tmp
 device.local.xml
 status.log
 stop.flag
+manage.flag
+device.xml.bak
 *.exe
 *.zip
 dist/

@@ -4,8 +4,10 @@ if (!(Test-Path -LiteralPath $compiler)) { throw '.NET Framework 4.x C# compiler
 Push-Location $PSScriptRoot
 try {
     New-Item -ItemType Directory -Path dist -Force | Out-Null
-    & $compiler /nologo /target:winexe /optimize+ /platform:x64 /reference:System.Management.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist\CardReaderGuard.exe ReaderGuard.cs SetupWizard.cs
+    & $compiler /nologo /target:winexe /optimize+ /platform:x64 /reference:System.Management.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist\CardReaderGuard.exe ReaderGuard.cs SetupWizard.cs BindingStore.cs Manager.cs
     if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
-    Copy-Item -LiteralPath '启动.vbs','停止.vbs','重新绑定.vbs','移除开机启动.ps1','README.md','LICENSE' -Destination dist -Force
-    Compress-Archive -LiteralPath (Get-ChildItem dist -File | Where-Object Name -notin @('device.xml','status.log','stop.flag')).FullName -DestinationPath CardReaderGuard-v0.1.0-win-x64.zip -Force
+    Get-ChildItem -File -Filter '*.vbs' | Copy-Item -Destination dist -Force
+    Get-ChildItem -File -Filter '*.ps1' | Where-Object Name -notin @('build.ps1','test.ps1') | Copy-Item -Destination dist -Force
+    Copy-Item -LiteralPath 'README.md','LICENSE' -Destination dist -Force
+    Compress-Archive -LiteralPath (Get-ChildItem dist -File | Where-Object { $_.Name -notmatch '^(device\.|status\.log|stop\.flag|manage\.flag)' }).FullName -DestinationPath CardReaderGuard-v0.2.0-win-x64.zip -Force
 } finally { Pop-Location }

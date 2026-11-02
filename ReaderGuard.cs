@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Collections.Generic;
 
 static partial class ReaderGuard {
  static string Target, Model, Serial;
@@ -63,48 +64,56 @@ static partial class ReaderGuard {
  [STAThread] static int Main(string[] args) {
   if(args.Contains("--stop")) { File.WriteAllText(Path.Combine(Root,"stop.flag"),""); return 0; }
   bool created; using(var mutex=new Mutex(true,@"Local\CardReaderGuard_152D0583",out created)) {
-   if(!created) { if(args.Contains("--setup")) MessageBox.Show("程序正在后台监测。请先双击“停止.vbs”，等待约 10 秒后再重新绑定。","读卡器自动弹出"); return args.Contains("--probe")?3:0; }
+   if(!created) { if(!args.Contains("--background") && !args.Contains("--probe")) File.WriteAllText(Path.Combine(Root,"manage.flag"),""); return args.Contains("--probe")?3:0; }
    bool interactive=!args.Contains("--background") && !args.Contains("--probe");
-   if(args.Contains("--setup") || (!File.Exists(Path.Combine(Root,"device.xml")) && interactive)) {
-    Application.EnableVisualStyles(); if(!Setup()) return 1;
+   Application.EnableVisualStyles();
+   List<Binding> bindings;
+   try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); }
+   catch(Exception error) { Log("CONFIG ERROR: "+error.Message); if(interactive) MessageBox.Show("绑定配置无法读取。原文件已保留，请检查 device.xml 或从备份恢复。\n"+error.Message,"无法读取配置"); return 2; }
+   if(interactive) {
+    if(!Manage(ref bindings) && bindings.Count==0) return 1;
    }
-  try {
-   var config=new System.Xml.XmlDocument(); config.XmlResolver=null; config.Load(Path.Combine(Root,"device.xml"));
-   Target=config.SelectSingleNode("/device/usbInstanceId").InnerText.Trim();
-   Model=config.SelectSingleNode("/device/model").InnerText.Trim();
-   Serial=config.SelectSingleNode("/device/serial").InnerText.Trim();
-   if(!Target.StartsWith(@"USB\VID_",StringComparison.OrdinalIgnoreCase) || Target.Split('\\').Length!=3 || String.IsNullOrWhiteSpace(Model) || String.IsNullOrWhiteSpace(Serial) || Target.Contains("REPLACE")) throw new Exception("Missing exact device binding");
-  } catch(Exception e) { Log("CONFIG ERROR: "+e.Message); return 2; }
-   if(args.Contains("--probe")) { try { uint usb; var d=Disk(out usb); if(d==null) throw new Exception("Target not present"); Log("PROBE OK: "+d["Model"]+" disk="+d["Index"]+" counters="+Counters(Convert.ToUInt32(d["Index"]))); return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
+   if(args.Contains("--probe")) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
+   if(!File.Exists(Path.Combine(Root,"device.xml"))) return 2;
    if(File.Exists(Path.Combine(Root,"stop.flag"))) File.Delete(Path.Combine(Root,"stop.flag"));
-   Log("START idle=300s; exact USB identity pinned; no force removal");
-   string previous=null, diskKey=null,lastError=null; var clock=Stopwatch.StartNew(); double idleSince=clock.Elapsed.TotalSeconds, lastSample=0;
+   Log("START v0.2.0 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
+   var states=new Dictionary<string,IdleState>(StringComparer.OrdinalIgnoreCase); var clock=Stopwatch.StartNew();
    while(!File.Exists(Path.Combine(Root,"stop.flag"))) {
+    var request=Path.Combine(Root,"manage.flag");
+    if(File.Exists(request)) { File.Delete(request); Manage(ref bindings); states.Clear(); }
+    foreach(var b in bindings.Where(b=>b.Enabled)) {
+     IdleState state; if(!states.TryGetValue(b.Usb,out state)) { state=new IdleState(); states.Add(b.Usb,state); }
+     Use(b);
     try {
      uint usb; var d=Disk(out usb); var now=clock.Elapsed.TotalSeconds;
-     if(d==null) { previous=null; diskKey=null; idleSince=now; }
+     if(d==null) { state.Reset(now); }
      else {
       var key=Convert.ToString(d["PNPDeviceID"])+":"+d["Index"]; var current=Counters(Convert.ToUInt32(d["Index"]));
-      if(ResetIdle(key,diskKey,current,previous,now-lastSample)) idleSince=now;
-      diskKey=key; previous=current;
-      if(current!=null && now-idleSince>=300) {
+      if(ResetIdle(key,state.Key,current,state.Previous,now-state.LastSample)) state.IdleSince=now;
+      state.Key=key; state.Previous=current;
+      if(current!=null && now-state.IdleSince>=b.Minutes*60) {
        // Revalidate both identity and counters immediately before the only removal call.
        uint checkedUsb; var check=Disk(out checkedUsb);
-       if(check==null || checkedUsb!=usb || Convert.ToString(check["PNPDeviceID"])+":"+check["Index"]!=key || Counters(Convert.ToUInt32(check["Index"]))!=current) { previous=null; idleSince=now; }
+       if(check==null || checkedUsb!=usb || Convert.ToString(check["PNPDeviceID"])+":"+check["Index"]!=key || Counters(Convert.ToUInt32(check["Index"]))!=current) { state.Reset(now); }
        else {
         uint veto; var reason=new StringBuilder(1024); var result=CM_Request_Device_EjectW(usb,out veto,reason,1024,0);
-        Log("EJECT result="+result+" veto="+veto+" reason="+reason);
-        if(result==0) Notice("读卡器已安全弹出","连续 5 分钟没有读写，已安全停止指定读卡器。再次使用可能需要重新插拔。");
+        Log("EJECT device="+b.Name+" result="+result+" veto="+veto+" reason="+reason);
+        if(result==0) Notice("读卡器已安全弹出",b.Name+" 已连续 "+b.Minutes+" 分钟没有读写，现已安全停止。再次使用可能需要重新插拔。");
         // A veto remains silent and starts a fresh full idle interval.
-        previous=null; diskKey=null; idleSince=clock.Elapsed.TotalSeconds;
+        state.Reset(clock.Elapsed.TotalSeconds);
        }
       }
      }
-     lastSample=clock.Elapsed.TotalSeconds; lastError=null;
-    } catch(Exception e) { previous=null; diskKey=null; idleSince=clock.Elapsed.TotalSeconds; if(lastError!=e.Message) Log("SKIP: "+e.Message); lastError=e.Message; }
+     state.LastSample=clock.Elapsed.TotalSeconds; state.LastError=null;
+    } catch(Exception e) { state.Reset(clock.Elapsed.TotalSeconds); if(state.LastError!=e.Message) Log("SKIP device="+b.Name+": "+e.Message); state.LastError=e.Message; }
+    }
     Thread.Sleep(5000);
    }
    Log("STOP"); return 0;
   }
+ }
+ sealed class IdleState {
+  public string Previous,Key,LastError; public double IdleSince,LastSample;
+  public void Reset(double now) { Previous=null; Key=null; IdleSince=now; }
  }
 }

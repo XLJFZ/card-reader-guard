@@ -8,8 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build portable application
-        shell: powershell
+        shell: pwsh
         run: ./build.ps1
       - name: Check idle and binding logic without ejecting hardware
-        shell: powershell
+        shell: pwsh
         run: ./test.ps1
