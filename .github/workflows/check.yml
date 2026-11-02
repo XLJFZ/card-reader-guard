@@ -13,3 +13,10 @@ jobs:
       - name: Check idle and binding logic without ejecting hardware
         shell: pwsh
         run: ./test.ps1
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: CardReaderGuard-win-x64
+          path: CardReaderGuard-v*-win-x64.zip
+          if-no-files-found: error
+          retention-days: 14
