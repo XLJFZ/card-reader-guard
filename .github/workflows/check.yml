@@ -1,0 +1,15 @@
+name: Windows build and safety checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build portable application
+        shell: powershell
+        run: ./build.ps1
+      - name: Check idle and binding logic without ejecting hardware
+        shell: powershell
+        run: ./test.ps1
