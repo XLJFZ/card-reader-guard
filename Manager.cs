@@ -139,11 +139,13 @@ static partial class ReaderGuard {
    side.RowStyles.Add(new RowStyle(SizeType.Percent,100)); side.RowStyles.Add(new RowStyle(SizeType.Absolute,38)); side.RowStyles.Add(new RowStyle(SizeType.Absolute,26));
    side.Controls.Add(UiLabel("设备设置",13,true),0,0);
    var labelName=UiLabel("设备名称",9,false); labelName.ForeColor=Muted;
-   var name=new TextBox { Dock=DockStyle.Top, MaxLength=80, AccessibleName="设备名称", TabIndex=0 };
+   var name=new TextBox { MaxLength=80, AccessibleName="设备名称", TabIndex=0 };
+   var nameFrame=new UiInputFrame(name) {Dock=DockStyle.Top,TabIndex=0};
    var labelTime=UiLabel("没有读写后多久弹出",9,false); labelTime.ForeColor=Muted;
    var timeRow=new FlowLayoutPanel { Dock=DockStyle.Fill, Margin=new Padding(0), WrapContents=false };
    var minutes=new NumericUpDown { Width=96, Minimum=1, Maximum=120, Value=5, AccessibleName="空闲时间（分钟）", TabIndex=1 };
-   var unit=new Label { Text="分钟（1–120）", AutoSize=true, Padding=new Padding(4,4,0,0), ForeColor=Muted }; timeRow.Controls.Add(minutes); timeRow.Controls.Add(unit);
+   var minuteFrame=new UiInputFrame(minutes) {Width=140,TabIndex=1};
+   var unit=new Label { Text="分钟（1–120）", AutoSize=true, Padding=new Padding(4,7,0,0), ForeColor=Muted }; timeRow.Controls.Add(minuteFrame); timeRow.Controls.Add(unit);
    var enabled=new UiToggle { Width=44, Height=28, Text="", AccessibleName="启用自动弹出", TabIndex=2, Margin=new Padding(0) };
    var enabledRow=new FlowLayoutPanel { Dock=DockStyle.Fill, WrapContents=false, Margin=new Padding(0) };
    var enabledText=new Label { Text="启用自动弹出", AutoSize=true, Padding=new Padding(0,3,0,0), ForeColor=Muted };
@@ -155,7 +157,7 @@ static partial class ReaderGuard {
    var remove=new UiButton { Dock=DockStyle.Fill, Margin=new Padding(0), Text="删除绑定", TabIndex=4 };
    deviceActions.Controls.Add(replace,0,0); deviceActions.Controls.Add(remove,1,0);
    var rangeHint=UiLabel("修改在保存后生效。",9,false); rangeHint.ForeColor=Muted;
-   side.Controls.Add(labelName,0,1); side.Controls.Add(name,0,2); side.Controls.Add(labelTime,0,3); side.Controls.Add(timeRow,0,4); side.Controls.Add(enabledRow,0,5); side.Controls.Add(deviceActions,0,7); side.Controls.Add(rangeHint,0,8);
+   side.Controls.Add(labelName,0,1); side.Controls.Add(nameFrame,0,2); side.Controls.Add(labelTime,0,3); side.Controls.Add(timeRow,0,4); side.Controls.Add(enabledRow,0,5); side.Controls.Add(deviceActions,0,7); side.Controls.Add(rangeHint,0,8);
    var sideHost=new Panel { Dock=DockStyle.Fill, Margin=new Padding(0) }; sideHost.Controls.Add(side);
    var guide=UiLabel("设备设置\n\n选择左侧设备，调整自动弹出规则。",11,false); guide.TextAlign=ContentAlignment.MiddleCenter; guide.ForeColor=Muted; guide.BackColor=Surface; sideHost.Controls.Add(guide);
    var logHost=new UiPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=2, Padding=new Padding(12,0,12,0), Margin=new Padding(0,8,0,0), BackColor=Surface };

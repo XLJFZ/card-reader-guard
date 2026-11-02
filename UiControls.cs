@@ -9,6 +9,41 @@ static partial class ReaderGuard {
    return stream==null?(Icon)SystemIcons.Application.Clone():new Icon(stream);
  }
  static GraphicsPath Round(Rectangle r,int radius) { var p=new GraphicsPath(); int d=radius*2; p.AddArc(r.X,r.Y,d,d,180,90);p.AddArc(r.Right-d,r.Y,d,d,270,90);p.AddArc(r.Right-d,r.Bottom-d,d,d,0,90);p.AddArc(r.X,r.Bottom-d,d,d,90,90);p.CloseFigure();return p; }
+ sealed class UiInputFrame : Panel {
+  readonly Control editor;
+  public UiInputFrame(Control input) {
+   SuspendLayout(); editor=input; DoubleBuffered=true; Height=36; Margin=new Padding(0); TabStop=false;
+   var text=input as TextBox; if(text!=null) {text.BorderStyle=BorderStyle.None;text.AutoSize=false;}
+   var number=input as NumericUpDown;
+   if(number!=null) {
+    number.BorderStyle=BorderStyle.None;
+    number.Controls[0].Visible=false;
+    number.Controls[0].SizeChanged+=(s,e)=>number.Controls[0].Visible=false;
+    foreach(string caption in new[]{"−","+"}) {
+     var button=new UiButton {Text=caption,Width=28,Height=28,AccessibleName=caption=="+"?"增加一分钟":"减少一分钟",Margin=new Padding(0)};
+     StyleButton(button,false); button.Click+=(s,e)=>{if(caption=="+")number.UpButton();else number.DownButton();};
+     Controls.Add(button);
+    }
+   }
+   Controls.Add(input); input.Dock=DockStyle.None; input.Margin=new Padding(0);
+   input.Enter+=(s,e)=>Invalidate();input.Leave+=(s,e)=>Invalidate();
+   Click+=(s,e)=>input.Focus(); ResumeLayout(true);
+  }
+  protected override void OnLayout(LayoutEventArgs e) {
+   base.OnLayout(e); if(editor==null || !Controls.Contains(editor))return;
+   int pad=(int)(10*DeviceDpi/96f),buttonWidth=(int)(28*DeviceDpi/96f);
+   var number=editor as NumericUpDown;
+   editor.SetBounds(pad,(Height-editor.PreferredSize.Height)/2,Math.Max(20,Width-pad*2-(number==null?0:buttonWidth*2+4)),editor.PreferredSize.Height);
+   if(number!=null) {number.Controls[0].Visible=false; for(int i=0;i<2;i++)Controls[i].SetBounds(Width-pad-buttonWidth*(2-i),(Height-buttonWidth)/2,buttonWidth,buttonWidth);}
+  }
+  protected override void OnPaint(PaintEventArgs e) {
+   e.Graphics.Clear(Parent==null?Paper:Parent.BackColor);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;
+   using(var path=Round(new Rectangle(1,1,Width-3,Height-3),(int)(6*DeviceDpi/96f))) {
+    using(var brush=new SolidBrush(Surface))e.Graphics.FillPath(brush,path);
+    using(var pen=new Pen(ContainsFocus?Blue:Line,ContainsFocus?2:1))e.Graphics.DrawPath(pen,path);
+   }
+  }
+ }
  sealed class UiPanel : TableLayoutPanel {
   public UiPanel() { DoubleBuffered=true; }
   protected override void OnPaint(PaintEventArgs e) { base.OnPaint(e); e.Graphics.SmoothingMode=SmoothingMode.AntiAlias; using(var path=Round(new Rectangle(0,0,Width-1,Height-1),10)) using(var pen=new Pen(Line)) e.Graphics.DrawPath(pen,path); }
