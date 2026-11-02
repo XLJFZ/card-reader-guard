@@ -14,3 +14,6 @@ appearance.txt
 
 # Local UI review captures and preview tools
 review/
+
+# Inno Setup compiler output
+installer/output/
