@@ -17,6 +17,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CardReaderGuard-win-x64
-          path: CardReaderGuard-v*-win-x64.zip
+          path: |
+            CardReaderGuard-v*-win-x64.zip
+            dist/CardReaderGuard.exe
           if-no-files-found: error
           retention-days: 14
