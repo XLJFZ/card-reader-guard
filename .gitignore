@@ -5,6 +5,7 @@ status.log
 stop.flag
 manage.flag
 device.xml.bak
+macos/build/
 *.exe
 *.zip
 dist/
