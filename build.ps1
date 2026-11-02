@@ -17,5 +17,5 @@ try {
     $sumPath = Join-Path $PWD 'dist\SHA256SUMS.txt'
     [IO.File]::WriteAllLines($sumPath, $sums, (New-Object System.Text.UTF8Encoding($false)))
     $archive = @($package.FullName) + $sumPath
-    Compress-Archive -LiteralPath $archive -DestinationPath CardReaderGuard-v0.2.3-win-x64.zip -Force
+    Compress-Archive -LiteralPath $archive -DestinationPath CardReaderGuard-v0.2.4-win-x64.zip -Force
 } finally { Pop-Location }

@@ -16,7 +16,7 @@
 & "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer\CardReaderGuard.iss
 ```
 
-输出 `installer/output/CardReaderGuard-Setup-0.2.3-x64.exe`。CI 在每次推送时执行同样的两步，把安装包上传为构建产物。
+输出 `installer/output/CardReaderGuard-Setup-0.2.4-x64.exe`。CI 在每次推送时执行同样的两步，把安装包上传为构建产物。
 
 ## 安装行为
 

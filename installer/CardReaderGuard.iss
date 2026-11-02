@@ -3,7 +3,7 @@
 ; The portable build in dist\ must exist first (run build.ps1).
 
 #define AppName "Card Reader Guard"
-#define AppVersion "0.2.3"
+#define AppVersion "0.2.4"
 #define AppPublisher "XLJFZ"
 #define AppExeName "CardReaderGuard.exe"
 #define SourceDir "..\dist"
