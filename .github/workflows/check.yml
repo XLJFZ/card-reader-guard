@@ -10,6 +10,25 @@ jobs:
       - name: Build portable application
         shell: pwsh
         run: ./build.ps1
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $assembly = [regex]::Match((Get-Content -LiteralPath '.\AssemblyInfo.cs' -Raw), 'AssemblyFileVersion\("([\d.]+)"\)').Groups[1].Value
+          $installer = [regex]::Match((Get-Content -LiteralPath '.\installer\CardReaderGuard.iss' -Raw), 'AppVersion "([\d.]+)"').Groups[1].Value
+          $assemblyShort = ($assembly -split '\.')[0..2] -join '.'
+          if ($assemblyShort -ne $installer) { throw "Installer version $installer does not match assembly version $assemblyShort." }
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path -LiteralPath $iscc)) { choco install innosetup --no-progress -y }
+          if (!(Test-Path -LiteralPath $iscc)) { throw 'Inno Setup compiler not found.' }
+          & $iscc 'installer\CardReaderGuard.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: CardReaderGuard-installer
+          path: installer/output/*.exe
+          if-no-files-found: error
+          retention-days: 14
       - name: Check idle and binding logic without ejecting hardware
         shell: pwsh
         run: ./test.ps1
