@@ -4,7 +4,7 @@ if (!(Test-Path -LiteralPath $compiler)) { throw '.NET Framework 4.x C# compiler
 Push-Location $PSScriptRoot
 try {
     New-Item -ItemType Directory -Path dist -Force | Out-Null
-    & $compiler /nologo /target:winexe /optimize+ /platform:x64 /win32manifest:app.manifest /reference:System.Management.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist\CardReaderGuard.exe ReaderGuard.cs SetupWizard.cs BindingStore.cs Manager.cs UiControls.cs AssemblyInfo.cs
+    & $compiler /nologo /target:winexe /optimize+ /platform:x64 /win32manifest:app.manifest /win32icon:Assets\App.ico /resource:Assets\App.ico,CardReaderGuard.App.ico /reference:System.Management.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist\CardReaderGuard.exe ReaderGuard.cs SetupWizard.cs BindingStore.cs Manager.cs UiControls.cs AssemblyInfo.cs
     if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
     Get-ChildItem -File -Filter '*.vbs' | Copy-Item -Destination dist -Force
     Get-ChildItem -File -Filter '*.ps1' | Where-Object Name -notin @('build.ps1','test.ps1') | Copy-Item -Destination dist -Force

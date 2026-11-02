@@ -3,6 +3,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 static partial class ReaderGuard {
+ static readonly Icon AppIcon=LoadAppIcon();
+ static Icon LoadAppIcon() {
+  using(var stream=typeof(ReaderGuard).Assembly.GetManifestResourceStream("CardReaderGuard.App.ico"))
+   return stream==null?(Icon)SystemIcons.Application.Clone():new Icon(stream);
+ }
  static GraphicsPath Round(Rectangle r,int radius) { var p=new GraphicsPath(); int d=radius*2; p.AddArc(r.X,r.Y,d,d,180,90);p.AddArc(r.Right-d,r.Y,d,d,270,90);p.AddArc(r.Right-d,r.Bottom-d,d,d,0,90);p.AddArc(r.X,r.Bottom-d,d,d,90,90);p.CloseFigure();return p; }
  sealed class UiPanel : TableLayoutPanel {
   public UiPanel() { DoubleBuffered=true; }

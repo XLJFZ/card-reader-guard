@@ -38,6 +38,7 @@ static partial class ReaderGuard {
  static Binding PickDevice() {
   Binding picked=null;
   using(var form=new Form()) {
+   form.Icon=AppIcon;
    form.Tag=new[]{Ink,Muted,Paper,Line,Tint,Surface}; form.SuspendLayout(); form.Text="添加读卡器 · Card Reader Guard"; form.ClientSize=new Size(900,650); form.MinimumSize=new Size(840,640); form.StartPosition=FormStartPosition.CenterScreen;
    form.Font=new Font("Microsoft YaHei UI",10); form.ForeColor=Ink; form.AutoScaleDimensions=new SizeF(96,96); form.AutoScaleMode=AutoScaleMode.Dpi;
    var layout=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=7, Padding=new Padding(28,20,28,20) };

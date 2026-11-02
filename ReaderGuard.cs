@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -62,7 +62,7 @@ static partial class ReaderGuard {
   return key!=oldKey || current==null || previous==null || current!=previous || gap>30;
  }
  static void Notice(string title,string message) {
-  using(var tray=new NotifyIcon()) { tray.Icon=SystemIcons.Information; tray.Visible=true; tray.BalloonTipTitle=title; tray.BalloonTipText=message; tray.ShowBalloonTip(5000); var until=DateTime.UtcNow.AddSeconds(7); while(DateTime.UtcNow<until) { Application.DoEvents(); Thread.Sleep(100); } tray.Visible=false; }
+  using(var tray=new NotifyIcon()) { tray.Icon=AppIcon; tray.Visible=true; tray.BalloonTipTitle=title; tray.BalloonTipText=message; tray.ShowBalloonTip(5000); var until=DateTime.UtcNow.AddSeconds(7); while(DateTime.UtcNow<until) { Application.DoEvents(); Thread.Sleep(100); } tray.Visible=false; }
  }
  [STAThread] static int Main(string[] args) {
   Application.EnableVisualStyles();
