@@ -15,7 +15,8 @@ jobs:
         run: |
           $assembly = [regex]::Match((Get-Content -LiteralPath '.\AssemblyInfo.cs' -Raw), 'AssemblyFileVersion\("([\d.]+)"\)').Groups[1].Value
           $installer = [regex]::Match((Get-Content -LiteralPath '.\installer\CardReaderGuard.iss' -Raw), 'AppVersion "([\d.]+)"').Groups[1].Value
-          if ($assembly -ne $installer) { throw "Installer version $installer does not match assembly version $assembly." }
+          $assemblyShort = ($assembly -split '\.')[0..2] -join '.'
+          if ($assemblyShort -ne $installer) { throw "Installer version $installer does not match assembly version $assemblyShort." }
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (!(Test-Path -LiteralPath $iscc)) { choco install innosetup --no-progress -y }
           if (!(Test-Path -LiteralPath $iscc)) { throw 'Inno Setup compiler not found.' }
