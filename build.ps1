@@ -11,5 +11,11 @@ try {
     Copy-Item -LiteralPath 'Assets\App.ico' -Destination 'dist\CardReaderGuard.ico' -Force
     Copy-Item -LiteralPath 'README.md','LICENSE' -Destination dist -Force
     Copy-Item -LiteralPath 'CardReaderGuard.exe.config' -Destination dist -Force
-    Compress-Archive -LiteralPath (Get-ChildItem dist -File | Where-Object { $_.Name -notmatch '^(device\.|status\.log|stop\.flag|manage\.flag|appearance\.txt$)' }).FullName -DestinationPath CardReaderGuard-v0.2.3-win-x64.zip -Force
+    $excluded = '^(device\.|status\.log|stop\.flag|manage\.flag|appearance\.txt$|SHA256SUMS\.txt$)'
+    $package = Get-ChildItem dist -File | Where-Object { $_.Name -notmatch $excluded } | Sort-Object Name
+    $sums = $package | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name }
+    $sumPath = Join-Path $PWD 'dist\SHA256SUMS.txt'
+    [IO.File]::WriteAllLines($sumPath, $sums, (New-Object System.Text.UTF8Encoding($false)))
+    $archive = @($package.FullName) + $sumPath
+    Compress-Archive -LiteralPath $archive -DestinationPath CardReaderGuard-v0.2.3-win-x64.zip -Force
 } finally { Pop-Location }
