@@ -23,7 +23,7 @@
 - 安装到 `%LOCALAPPDATA%\Programs\CardReaderGuard`，按当前用户安装，不弹 UAC，不改系统目录。
 - 开始菜单建三项：打开管理页、`--stop` 停止后台监测、卸载。
 - 桌面快捷方式和“登录时启动”都是可选项，默认不勾选；后者以 `--background` 启动，不弹管理页。
-- 卸载不会删除程序目录里的 `device.xml`，重装后读卡器绑定仍在。需要彻底清理时手动删除该文件。
+- 卸载会清除 `status.log`、`manage.flag`、`stop.flag`、`appearance.txt` 这些运行时文件，但保留 `device.xml`，重装后读卡器绑定仍在；因此有绑定记录时程序目录不会自动消失，需要彻底清理时手动删除该文件。
 
 ## 维护
 

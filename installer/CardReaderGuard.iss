@@ -56,3 +56,10 @@ Name: "{userstartup}\Card Reader Guard"; Filename: "{app}\{#AppExeName}"; Parame
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Open Card Reader Guard"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: files; Name: "{app}\status.log"
+Type: files; Name: "{app}\manage.flag"
+Type: files; Name: "{app}\stop.flag"
+Type: files; Name: "{app}\appearance.txt"
+Type: dirifempty; Name: "{app}"
