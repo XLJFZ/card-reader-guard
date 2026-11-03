@@ -6,6 +6,8 @@ Windows 小工具：由用户选择并确认读卡器，以后仅监测绑定设
 
 平时没有窗口或常驻托盘图标；弹出成功时短暂显示系统通知。没有联网、遥测或自动更新功能。
 
+另有 [macOS 原生测试版](macos/README.md)，支持 Intel / Apple Silicon 通用构建。已通过 macOS 编译与安全逻辑检查，尚未做真实读卡器、界面、通知及登录启动验收，也未完成 Developer ID 签名和 Apple 公证。Windows 正式版与 Mac 测试版分开发布。
+
 ## 使用
 
 1. 下载 Releases 中的 `CardReaderGuard-v0.2.4-win-x64.zip`，完整解压到长期保留且可写的本地文件夹。不要放在要弹出的卡里。

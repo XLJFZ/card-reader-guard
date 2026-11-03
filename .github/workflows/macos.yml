@@ -1,0 +1,22 @@
+name: macOS preview build and safety checks
+on:
+  push:
+    branches: [main, macos-preview]
+    paths: ['macos/**', '.github/workflows/macos.yml']
+  pull_request:
+    paths: ['macos/**', '.github/workflows/macos.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile both architectures and run non-destructive checks
+        run: bash macos/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CardReaderGuard-mac-universal-preview
+          path: macos/build/CardReaderGuard-v0.3.0-beta.1-mac-universal.zip
+          if-no-files-found: error
