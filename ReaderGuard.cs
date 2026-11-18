@@ -69,23 +69,25 @@ static partial class ReaderGuard {
   Application.SetCompatibleTextRenderingDefault(false);
   if(args.Contains("--dpi-check")) { using(var form=new Form()) { var handle=form.Handle; var awareness=GetAwarenessFromDpiAwarenessContext(GetWindowDpiAwarenessContext(handle)); Log("DPI CHECK awareness="+awareness+" windowDpi="+GetDpiForWindow(handle)+" target="+AppDomain.CurrentDomain.SetupInformation.TargetFrameworkName); return awareness==2?0:2; } }
   if(args.Contains("--stop")) { File.WriteAllText(Path.Combine(Root,"stop.flag"),""); return 0; }
+  if(args.Contains("--reload")) { File.WriteAllText(Path.Combine(Root,"reload.flag"),""); return 0; }
+  if(!args.Contains("--probe")) { try { using(var key=Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) if(key.GetValue("CardReaderGuard")!=null) key.SetValue("CardReaderGuard","\""+Application.ExecutablePath+"\" --background"); } catch(Exception error) { Log("STARTUP PATH UPDATE FAILED: "+error.Message); } }
   bool created; using(var mutex=new Mutex(true,@"Local\CardReaderGuard_152D0583",out created)) {
-   if(!created) { if(!args.Contains("--background") && !args.Contains("--probe")) File.WriteAllText(Path.Combine(Root,"manage.flag"),""); return args.Contains("--probe")?3:0; }
+   if(!created) { if(args.Contains("--background")) File.WriteAllText(Path.Combine(Root,"reload.flag"),""); else if(!args.Contains("--probe") && !args.Contains("--reload")) Process.Start(new ProcessStartInfo(Application.ExecutablePath,"--setup") { UseShellExecute=true }); return args.Contains("--probe")?3:0; }
    bool interactive=!args.Contains("--background") && !args.Contains("--probe");
    List<Binding> bindings;
    try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); }
    catch(Exception error) { Log("CONFIG ERROR: "+error.Message); if(interactive) MessageBox.Show("绑定配置无法读取。原文件已保留，请检查 device.xml 或从备份恢复。\n"+error.Message,"无法读取配置"); return 2; }
-   if(interactive) {
-    if(!Manage(ref bindings) && bindings.Count==0) return 1;
-   }
+   if(interactive) { Manage(ref bindings); return 0; }
    if(args.Contains("--probe")) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
    if(!File.Exists(Path.Combine(Root,"device.xml"))) return 2;
    if(File.Exists(Path.Combine(Root,"stop.flag"))) File.Delete(Path.Combine(Root,"stop.flag"));
-   Log("START v0.2.4 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
+   Log("START v0.2.5 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
    var states=new Dictionary<string,IdleState>(StringComparer.OrdinalIgnoreCase); var clock=Stopwatch.StartNew();
    while(!File.Exists(Path.Combine(Root,"stop.flag"))) {
     var request=Path.Combine(Root,"manage.flag");
     if(File.Exists(request)) { File.Delete(request); Manage(ref bindings); states.Clear(); }
+    var reload=Path.Combine(Root,"reload.flag");
+    if(File.Exists(reload)) { File.Delete(reload); try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); states.Clear(); Log("CONFIG RELOADED bindings="+bindings.Count); } catch(Exception error) { Log("CONFIG RELOAD ERROR: "+error.Message); } }
     foreach(var b in bindings.Where(b=>b.Enabled)) {
      IdleState state; if(!states.TryGetValue(b.Usb,out state)) { state=new IdleState(); states.Add(b.Usb,state); }
      Use(b);
@@ -112,7 +114,7 @@ static partial class ReaderGuard {
      state.LastSample=clock.Elapsed.TotalSeconds; state.LastError=null;
     } catch(Exception e) { state.Reset(clock.Elapsed.TotalSeconds); if(state.LastError!=e.Message) Log("SKIP device="+b.Name+": "+e.Message); state.LastError=e.Message; }
     }
-    Thread.Sleep(5000);
+    for(int i=0;i<50 && !File.Exists(Path.Combine(Root,"stop.flag")) && !File.Exists(Path.Combine(Root,"manage.flag")) && !File.Exists(Path.Combine(Root,"reload.flag"));i++) Thread.Sleep(100);
    }
    Log("STOP"); return 0;
   }

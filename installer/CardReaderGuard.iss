@@ -3,7 +3,7 @@
 ; The portable build in dist\ must exist first (run build.ps1).
 
 #define AppName "Card Reader Guard"
-#define AppVersion "0.2.4"
+#define AppVersion "0.2.5"
 #define AppPublisher "XLJFZ"
 #define AppExeName "CardReaderGuard.exe"
 #define SourceDir "..\dist"
@@ -56,10 +56,20 @@ Name: "{userstartup}\Card Reader Guard"; Filename: "{app}\{#AppExeName}"; Parame
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Open Card Reader Guard"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Parameters: "--background"; Flags: runhidden nowait postinstall skipifsilent; Tasks: startup
 
 [UninstallDelete]
 Type: files; Name: "{app}\status.log"
 Type: files; Name: "{app}\manage.flag"
 Type: files; Name: "{app}\stop.flag"
 Type: files; Name: "{app}\appearance.txt"
+Type: files; Name: "{app}\reload.flag"
+Type: files; Name: "{userstartup}\Card Reader Guard.lnk"
+Type: registry; Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "CardReaderGuard"
 Type: dirifempty; Name: "{app}"
+
+[Code]
+procedure InitializeWizard;
+begin
+  WizardForm.TasksList.Checked[1] := True;
+end;

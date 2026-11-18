@@ -17,5 +17,7 @@ try {
     $sumPath = Join-Path $PWD 'dist\SHA256SUMS.txt'
     [IO.File]::WriteAllLines($sumPath, $sums, (New-Object System.Text.UTF8Encoding($false)))
     $archive = @($package.FullName) + $sumPath
-    Compress-Archive -LiteralPath $archive -DestinationPath CardReaderGuard-v0.2.4-win-x64.zip -Force
+    $version = [regex]::Match((Get-Content -LiteralPath 'AssemblyInfo.cs' -Raw), 'AssemblyFileVersion\("([\d.]+)"\)').Groups[1].Value
+    $shortVersion = ($version -split '\.')[0..2] -join '.'
+    Compress-Archive -LiteralPath $archive -DestinationPath "CardReaderGuard-v$shortVersion-win-x64.zip" -Force
 } finally { Pop-Location }

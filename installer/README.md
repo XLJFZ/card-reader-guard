@@ -16,14 +16,14 @@
 & "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe" installer\CardReaderGuard.iss
 ```
 
-输出 `installer/output/CardReaderGuard-Setup-0.2.4-x64.exe`。CI 在每次推送时执行同样的两步，把安装包上传为构建产物。
+输出 `installer/output/CardReaderGuard-Setup-0.2.5-x64.exe`。CI 在每次推送时执行同样的两步，把安装包上传为构建产物。
 
 ## 安装行为
 
 - 安装到 `%LOCALAPPDATA%\Programs\CardReaderGuard`，按当前用户安装，不弹 UAC，不改系统目录。
 - 开始菜单建三项：打开管理页、`--stop` 停止后台监测、卸载。
-- 桌面快捷方式和“登录时启动”都是可选项，默认不勾选；后者以 `--background` 启动，不弹管理页。
-- 卸载会清除 `status.log`、`manage.flag`、`stop.flag`、`appearance.txt` 这些运行时文件，但保留 `device.xml`，重装后读卡器绑定仍在；因此有绑定记录时程序目录不会自动消失，需要彻底清理时手动删除该文件。
+- 桌面快捷方式可选；首次安装默认启用“登录时启动”，使用 `--background` 启动，不弹管理页。已有绑定的升级安装尊重用户现有启动选项。
+- 卸载会清除运行标记和本工具的登录启动项，但保留 `device.xml`，重装后读卡器绑定仍在；因此有绑定记录时程序目录不会自动消失，需要彻底清理时手动删除该文件。
 
 ## 维护
 
