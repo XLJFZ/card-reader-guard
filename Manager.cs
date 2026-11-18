@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using System.IO;
+using System.Diagnostics;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -205,7 +206,7 @@ static partial class ReaderGuard {
    replace.Click+=(s,e)=>{var old=selected(); if(old==null) return; var b=PickDevice(); if(b==null) return; if(draft.Any(x=>x!=old && String.Equals(x.Usb,b.Usb,StringComparison.OrdinalIgnoreCase))) {MessageBox.Show("目标设备已有绑定。","无法替换"); return;} b.Name=old.Name; b.Minutes=old.Minutes; b.Enabled=old.Enabled; draft[draft.IndexOf(old)]=b; rescan(); render(b);};
    remove.Click+=(s,e)=>{var b=selected(); if(b!=null && MessageBox.Show("删除“"+b.Name+"”的绑定？\n保存后将不再自动弹出这只设备，不会删除卡内文件。","删除绑定",MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button2)==DialogResult.Yes){draft.Remove(b);render(null);}};
    refresh.Click+=(s,e)=>rescan();
-   save.Click+=(s,e)=>{try { SaveBindings(draft,Path.Combine(Root,"device.xml")); using(var key=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) {if(startup.Checked)key.SetValue("CardReaderGuard","\""+Application.ExecutablePath+"\" --background");else key.DeleteValue("CardReaderGuard",false);} accepted=true;form.DialogResult=DialogResult.OK;form.Close(); } catch(Exception error){MessageBox.Show(error.Message,"未能保存",MessageBoxButtons.OK,MessageBoxIcon.Warning);} };
+   save.Click+=(s,e)=>{try { SaveBindings(draft,Path.Combine(Root,"device.xml")); using(var key=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) {if(startup.Checked)key.SetValue("CardReaderGuard","\""+Application.ExecutablePath+"\" --background");else key.DeleteValue("CardReaderGuard",false);} accepted=true; try { Process.Start(new ProcessStartInfo(Application.ExecutablePath,"--background") { UseShellExecute=true,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden }); } catch(Exception error) { MessageBox.Show("配置已保存，但后台监测未能启动。请重新打开程序检查日志。\n"+error.Message,"后台未启动",MessageBoxButtons.OK,MessageBoxIcon.Warning); } form.DialogResult=DialogResult.OK;form.Close(); } catch(Exception error){MessageBox.Show(error.Message,"未能保存",MessageBoxButtons.OK,MessageBoxIcon.Warning);} };
    form.Controls.Add(layout); form.CancelButton=cancel; form.Shown+=(s,e)=>{rescan(); readLog(); ApplyUiTheme(form);}; WatchUiTheme(form); form.ResumeLayout(true); form.ShowDialog();
   }
   if(accepted) bindings=draft; return accepted;
