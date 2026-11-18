@@ -3,7 +3,7 @@
 ; The portable build in dist\ must exist first (run build.ps1).
 
 #define AppName "Card Reader Guard"
-#define AppVersion "0.2.5"
+#define AppVersion "0.2.6"
 #define AppPublisher "XLJFZ"
 #define AppExeName "CardReaderGuard.exe"
 #define SourceDir "..\dist"
@@ -64,12 +64,19 @@ Type: files; Name: "{app}\manage.flag"
 Type: files; Name: "{app}\stop.flag"
 Type: files; Name: "{app}\appearance.txt"
 Type: files; Name: "{app}\reload.flag"
-Type: files; Name: "{userstartup}\Card Reader Guard.lnk"
-Type: registry; Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "CardReaderGuard"
 Type: dirifempty; Name: "{app}"
 
 [Code]
 procedure InitializeWizard;
 begin
   WizardForm.TasksList.Checked[1] := True;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'CardReaderGuard');
+    DeleteFile(ExpandConstant('{userstartup}\Card Reader Guard.lnk'));
+  end;
 end;
