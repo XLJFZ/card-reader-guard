@@ -3,7 +3,7 @@
 ; The portable build in dist\ must exist first (run build.ps1).
 
 #define AppName "Card Reader Guard"
-#define AppVersion "0.2.8"
+#define AppVersion "0.2.9"
 #define AppPublisher "XLJFZ"
 #define AppExeName "CardReaderGuard.exe"
 #define SourceDir "..\dist"
@@ -57,6 +57,9 @@ Name: "{userstartup}\Card Reader Guard"; Filename: "{app}\{#AppExeName}"; Parame
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Open Card Reader Guard"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\{#AppExeName}"; Parameters: "--background"; Flags: runhidden nowait postinstall skipifsilent; Tasks: startup
+
+[UninstallRun]
+Filename: "{app}\{#AppExeName}"; Parameters: "--stop"; RunOnceId: "StopCardReaderGuard"; Flags: runhidden waituntilterminated skipifdoesntexist
 
 [UninstallDelete]
 Type: files; Name: "{app}\status.log"

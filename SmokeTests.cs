@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 class SmokeTests {
  static Type t; static int count;
  static object Call(string n,params object[] a) { try { return t.GetMethod(n,BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,a); } catch(TargetInvocationException e) { Console.WriteLine("DETAIL "+n+": "+e.InnerException.GetType().FullName+" "+e.InnerException.Message); throw; } }
@@ -10,6 +11,17 @@ class SmokeTests {
  static void Rejected(string field,string bad,string correct) { Set(field,bad); bool rejected=false; try { Call("Disk",new object[]{(uint)0}); } catch(TargetInvocationException) { rejected=true; } finally {Set(field,correct);} Check(rejected,field+" mismatch refuses target"); }
  static void Main(string[] args) {
   t=Assembly.LoadFile(Path.GetFullPath(args[0])).GetType("ReaderGuard");
+  Check((bool)Call("IsManagementLaunch",new object[]{new string[0]}),"default launch opens manager directly");
+  Check((bool)Call("IsManagementLaunch",new object[]{new[]{"--setup"}}),"setup launch bypasses monitor mutex");
+  Check(!(bool)Call("IsManagementLaunch",new object[]{new[]{"--background"}}) && !(bool)Call("IsManagementLaunch",new object[]{new[]{"--probe"}}),"monitor and probe use singleton mutex");
+  var stopRoot=Path.Combine(Path.GetTempPath(),"CardReaderGuard-stop-"+Guid.NewGuid().ToString("N")); Directory.CreateDirectory(stopRoot);
+  var stopMutexName=@"Local\CardReaderGuard_StopTest_"+Guid.NewGuid().ToString("N"); using(var stopMutex=new Mutex(false,stopMutexName)) {
+   var stopPath=Path.Combine(stopRoot,"stop.flag");
+   var holder=new Thread(()=>{stopMutex.WaitOne(); for(int i=0;i<500 && !File.Exists(stopPath);i++) Thread.Sleep(10); stopMutex.ReleaseMutex();});
+   holder.Start(); Thread.Sleep(50); Call("RequestStop",stopRoot,true,stopMutexName);
+   Check(File.Exists(stopPath) && holder.Join(1000),"stop waits for monitor mutex to be released");
+  }
+  if(Directory.Exists(stopRoot)) Directory.Delete(stopRoot,true);
   Check(!(bool)Call("ResetIdle","a","a","10:20","10:20",5.0),"unchanged counters preserve idle");
   Check((bool)Call("ResetIdle","a","a","11:20","10:20",5.0),"read activity resets idle");
   Check((bool)Call("ResetIdle","a","a","10:21","10:20",5.0),"write activity resets idle");

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 
 static partial class ReaderGuard {
  static string Target, Model, Serial;
+ const string MonitorMutexName = @"Local\CardReaderGuard_152D0583";
  static readonly string Root = AppDomain.CurrentDomain.BaseDirectory;
  static readonly string LogPath = Path.Combine(Root,"status.log");
  [DllImport("user32.dll")] static extern IntPtr GetWindowDpiAwarenessContext(IntPtr hwnd);
@@ -68,20 +69,26 @@ static partial class ReaderGuard {
   Application.EnableVisualStyles();
   Application.SetCompatibleTextRenderingDefault(false);
   if(args.Contains("--dpi-check")) { using(var form=new Form()) { var handle=form.Handle; var awareness=GetAwarenessFromDpiAwarenessContext(GetWindowDpiAwarenessContext(handle)); Log("DPI CHECK awareness="+awareness+" windowDpi="+GetDpiForWindow(handle)+" target="+AppDomain.CurrentDomain.SetupInformation.TargetFrameworkName); return awareness==2?0:2; } }
-  if(args.Contains("--stop")) { File.WriteAllText(Path.Combine(Root,"stop.flag"),""); return 0; }
+  if(args.Contains("--stop")) { StopBackground(); return 0; }
   if(args.Contains("--reload")) { File.WriteAllText(Path.Combine(Root,"reload.flag"),""); return 0; }
   if(!args.Contains("--probe")) { try { using(var key=Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) if(key.GetValue("CardReaderGuard")!=null) key.SetValue("CardReaderGuard","\""+Application.ExecutablePath+"\" --background"); } catch(Exception error) { Log("STARTUP PATH UPDATE FAILED: "+error.Message); } }
-  bool created; using(var mutex=new Mutex(true,@"Local\CardReaderGuard_152D0583",out created)) {
-   if(!created) { if(args.Contains("--background")) File.WriteAllText(Path.Combine(Root,"reload.flag"),""); else if(!args.Contains("--probe") && !args.Contains("--reload")) Process.Start(new ProcessStartInfo(Application.ExecutablePath,"--setup") { UseShellExecute=true }); return args.Contains("--probe")?3:0; }
-   bool interactive=!args.Contains("--background") && !args.Contains("--probe");
+  bool background=args.Contains("--background"), probe=args.Contains("--probe");
+  if(IsManagementLaunch(args)) {
    List<Binding> bindings;
    try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); }
-   catch(Exception error) { Log("CONFIG ERROR: "+error.Message); if(interactive) MessageBox.Show("绑定配置无法读取。原文件已保留，请检查 device.xml 或从备份恢复。\n"+error.Message,"无法读取配置"); return 2; }
-   if(interactive) { Manage(ref bindings); return 0; }
-   if(args.Contains("--probe")) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
+   catch(Exception error) { Log("CONFIG ERROR: "+error.Message); MessageBox.Show("绑定配置无法读取。原文件已保留，请检查 device.xml 或从备份恢复。\n"+error.Message,"无法读取配置"); return 2; }
+   Manage(ref bindings);
+   return 0;
+  }
+  bool created; using(var mutex=new Mutex(true,MonitorMutexName,out created)) {
+   if(!created) { if(background) File.WriteAllText(Path.Combine(Root,"reload.flag"),""); return probe?3:0; }
+   List<Binding> bindings;
+   try { bindings=LoadBindings(Path.Combine(Root,"device.xml")); }
+   catch(Exception error) { Log("CONFIG ERROR: "+error.Message); return 2; }
+   if(probe) { try { if(bindings.Count==0) throw new Exception("No bound devices"); foreach(var b in bindings.Where(b=>b.Enabled)) { Use(b); uint usb; var d=Disk(out usb); if(d==null || Counters(Convert.ToUInt32(d["Index"]))==null) throw new Exception("Target absent or busy"); Log("PROBE OK: "+b.Name); } return 0; } catch(Exception e) { Log("PROBE FAILED: "+e.Message); return 2; } }
    if(!File.Exists(Path.Combine(Root,"device.xml"))) return 2;
    if(File.Exists(Path.Combine(Root,"stop.flag"))) File.Delete(Path.Combine(Root,"stop.flag"));
-   Log("START v0.2.8 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
+    Log("START v0.2.9 bindings="+bindings.Count+"; exact USB identity pinned; no force removal");
    var states=new Dictionary<string,IdleState>(StringComparer.OrdinalIgnoreCase); var clock=Stopwatch.StartNew();
    while(!File.Exists(Path.Combine(Root,"stop.flag"))) {
     var request=Path.Combine(Root,"manage.flag");
@@ -118,6 +125,22 @@ static partial class ReaderGuard {
    }
    Log("STOP"); return 0;
   }
+ }
+ static void StopBackground() {
+  RequestStop(Root,true,MonitorMutexName);
+ }
+ static bool IsManagementLaunch(string[] args) { return !args.Contains("--background") && !args.Contains("--probe"); }
+ static void RequestStop(string root,bool waitForExit,string mutexName) {
+  File.WriteAllText(Path.Combine(root,"stop.flag"),"");
+  if(!waitForExit) return;
+  try {
+   using(var mutex=Mutex.OpenExisting(mutexName)) {
+    bool acquired=false;
+    try { acquired=mutex.WaitOne(); }
+    catch(AbandonedMutexException) { acquired=true; }
+    if(acquired) mutex.ReleaseMutex();
+   }
+  } catch(WaitHandleCannotBeOpenedException) { }
  }
  sealed class IdleState {
   public string Previous,Key,LastError; public double IdleSince,LastSample;
